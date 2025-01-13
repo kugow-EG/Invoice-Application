@@ -82,39 +82,5 @@ namespace InvoiceSystem.Services
                 await _invoiceRepository.CreateInvoiceAsync(newInvoiceEntity);
             }
         }
-
-        //public async Task ProcessOverdueAsync(OverdueDTO overdueDTO)
-        //{
-        //    var overdueInvoices = await _invoiceRepository.GetInvoicesAsync();
-        //    foreach (var invoiceEntity in overdueInvoices)
-        //    {
-        //        if (invoiceEntity.Duedate < DateOnly.FromDateTime(DateTime.Today) && invoiceEntity.Status != InvoiceStatusEnum.Paid.ToString() && invoiceEntity.Status != InvoiceStatusEnum.Void.ToString())
-        //        {
-        //            if (invoiceEntity.Paid_amount > 0 && invoiceEntity.Paid_amount < invoiceEntity.Amount)
-        //            {
-        //                invoiceEntity.Status = InvoiceStatusEnum.Paid.ToString();
-        //                var remainingAmount = invoiceEntity.Amount + overdueDTO.late_fee;
-        //                var newInvoiceEntity = new InvoiceEntity
-        //                {
-        //                    Amount = remainingAmount,
-        //                    Duedate = invoiceEntity.Duedate.AddDays(overdueDTO.overdue_days),
-        //                    Status = InvoiceStatusEnum.Pending.ToString()
-        //                };
-        //                await _invoiceRepository.CreateInvoiceAsync(newInvoiceEntity);
-        //            }
-        //            else if (invoiceEntity.Paid_amount == 0)
-        //            {
-        //                invoiceEntity.Status = InvoiceStatusEnum.Void.ToString();
-        //                var newInvoiceEntity = new InvoiceEntity
-        //                {
-        //                    Amount = invoiceEntity.Amount + overdueDTO.late_fee,
-        //                    Duedate = invoiceEntity.Duedate.AddDays(overdueDTO.overdue_days),
-        //                    Status = InvoiceStatusEnum.Pending.ToString()
-        //                };
-        //                await _invoiceRepository.CreateInvoiceAsync(newInvoiceEntity);
-        //            }
-        //        }
-        //    }
-        //}
     }
 }

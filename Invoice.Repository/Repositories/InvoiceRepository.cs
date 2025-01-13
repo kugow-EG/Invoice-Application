@@ -12,14 +12,12 @@ namespace Invoice.Repository.Repositories
         {
             _context = context;
         }
-
         public async Task<InvoiceEntity> CreateInvoiceAsync(InvoiceEntity invoice)
         {
             _context.InvoiceTable.Add(invoice);
             await _context.SaveChangesAsync();
             return invoice;
         }
-
         public async Task<List<InvoiceEntity>> GetInvoicesAsync()
         {
             return await _context.InvoiceTable.ToListAsync();
@@ -29,7 +27,6 @@ namespace Invoice.Repository.Repositories
         {
             return await _context.InvoiceTable.FindAsync(id);
         }
-
         public async Task UpdateInvoiceAsync(InvoiceEntity invoice)
         {
             _context.InvoiceTable.Update(invoice);

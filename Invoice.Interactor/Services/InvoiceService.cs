@@ -49,11 +49,7 @@ namespace InvoiceSystem.Services
             {
                 invoiceEntity.Status = InvoiceStatusEnum.Paid.ToString();
             }
-            //else if (invoiceEntity.Paid_amount < invoiceEntity.Amount)
-            //{
-            //    invoiceEntity.Status = "pending";
-            //}
-            else if (invoiceEntity.Paid_amount > invoiceEntity.Amount)
+            else if(invoiceEntity.Paid_amount > invoiceEntity.Amount)
             {
                 throw new Exception("Overpayment is not allowed");
             }
@@ -75,7 +71,7 @@ namespace InvoiceSystem.Services
                         var newInvoiceEntity = new InvoiceEntity
                         {
                             Amount = remainingAmount,
-                            Duedate = DateOnly.FromDateTime(DateTime.Today).AddDays(overdueDTO.overdue_days),
+                            Duedate = invoiceEntity.Duedate.AddDays(overdueDTO.overdue_days),
                             Status = InvoiceStatusEnum.Pending.ToString()
                         };
                         await _invoiceRepository.CreateInvoiceAsync(newInvoiceEntity);
@@ -86,7 +82,7 @@ namespace InvoiceSystem.Services
                         var newInvoiceEntity = new InvoiceEntity
                         {
                             Amount = invoiceEntity.Amount + overdueDTO.late_fee,
-                            Duedate = DateOnly.FromDateTime(DateTime.Today).AddDays(overdueDTO.overdue_days),
+                            Duedate = invoiceEntity.Duedate.AddDays(overdueDTO.overdue_days),
                             Status = InvoiceStatusEnum.Pending.ToString()
                         };
                         await _invoiceRepository.CreateInvoiceAsync(newInvoiceEntity);

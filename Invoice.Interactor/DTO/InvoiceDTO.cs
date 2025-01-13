@@ -9,10 +9,8 @@ namespace Invoice.Interactor.DTO
     public class InvoiceDTO
     {
         public decimal Amount { get; set; }
-
         public DateOnly Duedate { get; set; }
     }
-
     public class CreateInvoiceRespose
     {
         public string Id { get; set; }

@@ -5,7 +5,7 @@ using InvoiceSystem.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-// Add services to the container.
+
 builder.Services.AddDbContext<InvoiceDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("InvoiceConnectionString")));
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
@@ -22,9 +22,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

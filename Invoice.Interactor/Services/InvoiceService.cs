@@ -39,7 +39,7 @@ namespace InvoiceSystem.Services
         public async Task ProcessPaymentsAsync(int id, decimal amount)
         {
             var invoiceEntity = await _invoiceRepository.GetInvoiceByIdAsync(id);
-            if (invoiceEntity == null) throw new Exception("Invoice not found");
+            if (invoiceEntity == null || invoiceEntity.Status == InvoiceStatusEnum.Void.ToString()) throw new Exception("Invoice not found or not payable");
             if (invoiceEntity.Amount == 0) throw new Exception("Payment is already done");
 
             invoiceEntity.Paid_amount += amount;
@@ -60,35 +60,61 @@ namespace InvoiceSystem.Services
         public async Task ProcessOverdueAsync(OverdueDTO overdueDTO)
         {
             var overdueInvoices = await _invoiceRepository.GetInvoicesAsync();
+
             foreach (var invoiceEntity in overdueInvoices)
             {
-                if (invoiceEntity.Duedate < DateOnly.FromDateTime(DateTime.Today) && invoiceEntity.Status != InvoiceStatusEnum.Paid.ToString() && invoiceEntity.Status != InvoiceStatusEnum.Void.ToString())
+                // check if invoice is not overdue, paid or void
+                if (invoiceEntity.Duedate >= DateOnly.FromDateTime(DateTime.Today) ||
+                    invoiceEntity.Status == InvoiceStatusEnum.Paid.ToString() ||
+                    invoiceEntity.Status == InvoiceStatusEnum.Void.ToString())
                 {
-                    if (invoiceEntity.Paid_amount > 0 && invoiceEntity.Paid_amount < invoiceEntity.Amount)
-                    {
-                        invoiceEntity.Status = InvoiceStatusEnum.Paid.ToString();
-                        var remainingAmount = invoiceEntity.Amount + overdueDTO.late_fee;
-                        var newInvoiceEntity = new InvoiceEntity
-                        {
-                            Amount = remainingAmount,
-                            Duedate = invoiceEntity.Duedate.AddDays(overdueDTO.overdue_days),
-                            Status = InvoiceStatusEnum.Pending.ToString()
-                        };
-                        await _invoiceRepository.CreateInvoiceAsync(newInvoiceEntity);
-                    }
-                    else if (invoiceEntity.Paid_amount == 0)
-                    {
-                        invoiceEntity.Status = InvoiceStatusEnum.Void.ToString();
-                        var newInvoiceEntity = new InvoiceEntity
-                        {
-                            Amount = invoiceEntity.Amount + overdueDTO.late_fee,
-                            Duedate = invoiceEntity.Duedate.AddDays(overdueDTO.overdue_days),
-                            Status = InvoiceStatusEnum.Pending.ToString()
-                        };
-                        await _invoiceRepository.CreateInvoiceAsync(newInvoiceEntity);
-                    }
+                    continue;
                 }
+                bool isPartiallyPaid = invoiceEntity.Paid_amount > 0 && invoiceEntity.Paid_amount < invoiceEntity.Amount;
+                invoiceEntity.Status = isPartiallyPaid ? InvoiceStatusEnum.Paid.ToString() : InvoiceStatusEnum.Void.ToString();
+
+                var newInvoiceEntity = new InvoiceEntity
+                {
+                    Amount = invoiceEntity.Amount + overdueDTO.late_fee,
+                    Duedate = invoiceEntity.Duedate.AddDays(overdueDTO.overdue_days),
+                    Status = InvoiceStatusEnum.Pending.ToString()
+                };
+                await _invoiceRepository.CreateInvoiceAsync(newInvoiceEntity);
             }
         }
+
+        //public async Task ProcessOverdueAsync(OverdueDTO overdueDTO)
+        //{
+        //    var overdueInvoices = await _invoiceRepository.GetInvoicesAsync();
+        //    foreach (var invoiceEntity in overdueInvoices)
+        //    {
+        //        if (invoiceEntity.Duedate < DateOnly.FromDateTime(DateTime.Today) && invoiceEntity.Status != InvoiceStatusEnum.Paid.ToString() && invoiceEntity.Status != InvoiceStatusEnum.Void.ToString())
+        //        {
+        //            if (invoiceEntity.Paid_amount > 0 && invoiceEntity.Paid_amount < invoiceEntity.Amount)
+        //            {
+        //                invoiceEntity.Status = InvoiceStatusEnum.Paid.ToString();
+        //                var remainingAmount = invoiceEntity.Amount + overdueDTO.late_fee;
+        //                var newInvoiceEntity = new InvoiceEntity
+        //                {
+        //                    Amount = remainingAmount,
+        //                    Duedate = invoiceEntity.Duedate.AddDays(overdueDTO.overdue_days),
+        //                    Status = InvoiceStatusEnum.Pending.ToString()
+        //                };
+        //                await _invoiceRepository.CreateInvoiceAsync(newInvoiceEntity);
+        //            }
+        //            else if (invoiceEntity.Paid_amount == 0)
+        //            {
+        //                invoiceEntity.Status = InvoiceStatusEnum.Void.ToString();
+        //                var newInvoiceEntity = new InvoiceEntity
+        //                {
+        //                    Amount = invoiceEntity.Amount + overdueDTO.late_fee,
+        //                    Duedate = invoiceEntity.Duedate.AddDays(overdueDTO.overdue_days),
+        //                    Status = InvoiceStatusEnum.Pending.ToString()
+        //                };
+        //                await _invoiceRepository.CreateInvoiceAsync(newInvoiceEntity);
+        //            }
+        //        }
+        //    }
+        //}
     }
 }

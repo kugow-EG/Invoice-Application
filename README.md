@@ -7,8 +7,8 @@ Tests: For unit testing.
 
 # Key Features
  # Invoice Management:
-  Create new invoices. \n
-  Fetch all invoices. \n
+  Create new invoices. 
+  Fetch all invoices. 
   Process payments.
   Overdue Invoice Handling:
   

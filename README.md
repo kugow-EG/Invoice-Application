@@ -21,3 +21,4 @@ Entity Framework Core
 AutoMapper
 xUnit for unit testing
 SQL Server (Database)
+Docker

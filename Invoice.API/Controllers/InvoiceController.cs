@@ -37,11 +37,11 @@ namespace Invoice.API.Controllers
         }
 
         [HttpPost("{id}/payments")]
-        public async Task<IActionResult> ProcessPayments(int id, [FromBody] decimal amount)
+        public async Task<IActionResult> ProcessPayments(int id, [FromBody] PaymentAmountDTO paymentAmountDTO)
         {
             try
             {
-                await _invoiceService.ProcessPaymentsAsync(id, amount);
+                await _invoiceService.ProcessPaymentsAsync(id, paymentAmountDTO.Amount);
                 return Ok();
             }
             catch (Exception ex)

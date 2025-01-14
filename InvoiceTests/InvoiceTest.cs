@@ -45,16 +45,16 @@ namespace InvoiceTests
         {
             // Arrange
             var invoiceEntities = new List<InvoiceEntity>
-        {
-            new InvoiceEntity { Id = 1, Amount = 100, Status = "pending" },
-            new InvoiceEntity { Id = 2, Amount = 200, Status = "paid" }
-        };
+            {
+                new InvoiceEntity { Id = 1, Amount = 100, Status = "pending" },
+                new InvoiceEntity { Id = 2, Amount = 200, Status = "paid" }
+            };
 
             var invoiceModels = new List<InvoiceModel>
-        {
-            new InvoiceModel { Id = 1, Amount = 100, Status = "pending" },
-            new InvoiceModel { Id = 2, Amount = 200, Status = "paid" }
-        };
+            {
+                new InvoiceModel { Id = 1, Amount = 100, Status = "pending" },
+                new InvoiceModel { Id = 2, Amount = 200, Status = "paid" }
+            };
 
             _mockRepository.Setup(r => r.GetInvoicesAsync()).ReturnsAsync(invoiceEntities);
             _mockMapper.Setup(m => m.Map<List<InvoiceModel>>(invoiceEntities)).Returns(invoiceModels);
@@ -71,7 +71,7 @@ namespace InvoiceTests
         public async Task ProcessPaymentsAsync_ShouldUpdateInvoice_WhenPaymentIsValid()
         {
             // Arrange
-            var invoiceEntity = new InvoiceEntity { Id = 1, Amount = 100, Paid_amount = 0, Status = "pending" };
+            var invoiceEntity = new InvoiceEntity { Id = 1, Amount = 100, Duedate = DateOnly.FromDateTime(DateTime.Today.AddDays(5)), Paid_amount = 0, Status = "pending" };
             var paymentAmount = 50;
 
             _mockRepository.Setup(r => r.GetInvoiceByIdAsync(invoiceEntity.Id)).ReturnsAsync(invoiceEntity);
@@ -88,10 +88,30 @@ namespace InvoiceTests
         }
 
         [Fact]
+        public async Task ProcessPaymentsAsync_ShouldUpdateStatusToPaid_WhenFullPaymentIsMade()
+        {
+            // Arrange
+            var invoiceEntity = new InvoiceEntity { Id = 1, Amount = 100, Duedate = DateOnly.FromDateTime(DateTime.Today.AddDays(5)), Paid_amount = 0, Status = "pending" };
+            var paymentAmount = 100;
+
+            _mockRepository.Setup(r => r.GetInvoiceByIdAsync(invoiceEntity.Id)).ReturnsAsync(invoiceEntity);
+
+            // Act
+            await _invoiceService.ProcessPaymentsAsync(invoiceEntity.Id, paymentAmount);
+
+            // Assert
+            Assert.Equal(100, invoiceEntity.Paid_amount);
+            Assert.Equal(0, invoiceEntity.Amount);
+            Assert.Equal("Paid", invoiceEntity.Status);
+
+            _mockRepository.Verify(r => r.UpdateInvoiceAsync(invoiceEntity), Times.Once);
+        }
+
+        [Fact]
         public async Task ProcessPaymentsAsync_ShouldThrowException_WhenOverpaymentOccurs()
         {
             // Arrange
-            var invoiceEntity = new InvoiceEntity { Id = 1, Amount = 100, Paid_amount = 0, Status = "pending" };
+            var invoiceEntity = new InvoiceEntity { Id = 1, Amount = 100, Duedate = DateOnly.FromDateTime(DateTime.Today.AddDays(5)),  Paid_amount = 0, Status = "pending" };
             var paymentAmount = 150;
 
             _mockRepository.Setup(r => r.GetInvoiceByIdAsync(invoiceEntity.Id)).ReturnsAsync(invoiceEntity);
@@ -107,10 +127,10 @@ namespace InvoiceTests
             // Arrange
             var overdueDTO = new OverdueDTO { late_fee = 20, overdue_days = 5 };
             var overdueInvoices = new List<InvoiceEntity>
-        {
-            new InvoiceEntity { Id = 1, Amount = 100, Paid_amount = 0, Duedate = DateOnly.FromDateTime(DateTime.Today.AddDays(-1)), Status = "pending" },
-            new InvoiceEntity { Id = 2, Amount = 200, Paid_amount = 100, Duedate = DateOnly.FromDateTime(DateTime.Today.AddDays(-2)), Status = "pending" }
-        };
+            {
+                new InvoiceEntity { Id = 1, Amount = 100, Paid_amount = 0, Duedate = DateOnly.FromDateTime(DateTime.Today.AddDays(-1)), Status = "pending" },
+                new InvoiceEntity { Id = 2, Amount = 200, Paid_amount = 100, Duedate = DateOnly.FromDateTime(DateTime.Today.AddDays(-2)), Status = "pending" }
+            };
 
             _mockRepository.Setup(r => r.GetInvoicesAsync()).ReturnsAsync(overdueInvoices);
 
@@ -118,7 +138,8 @@ namespace InvoiceTests
             await _invoiceService.ProcessOverdueAsync(overdueDTO);
 
             // Assert
-            _mockRepository.Verify(r => r.CreateInvoiceAsync(It.IsAny<InvoiceEntity>()), Times.Exactly(2));
+            _mockRepository.Verify(r => r.CreateInvoiceAsync(It.Is<InvoiceEntity>(e => e.Amount == 120 && e.Status == "Pending")), Times.Once);
+            _mockRepository.Verify(r => r.CreateInvoiceAsync(It.Is<InvoiceEntity>(e => e.Amount == 120 && e.Status == "Pending")), Times.Once);
         }
     }
 }

@@ -21,6 +21,10 @@ namespace InvoiceSystem.Services
 
         public async Task<CreateInvoiceRespose> CreateInvoiceAsync(InvoiceDTO invoice)
         {
+            if (invoice.Duedate < DateOnly.FromDateTime(DateTime.Today))
+            {
+                throw new InvalidOperationException("The due date cannot be in the past.");
+            }
             var invoiceEntity = _mapper.Map<InvoiceEntity>(invoice);
             var createdInvoiceEntity = await _invoiceRepository.CreateInvoiceAsync(invoiceEntity);
             CreateInvoiceRespose result = new()
@@ -39,9 +43,12 @@ namespace InvoiceSystem.Services
         public async Task ProcessPaymentsAsync(int id, decimal amount)
         {
             var invoiceEntity = await _invoiceRepository.GetInvoiceByIdAsync(id);
+           
             if (invoiceEntity == null || invoiceEntity.Status == InvoiceStatusEnum.Void.ToString()) throw new Exception("Invoice not found or not payable");
+            if (invoiceEntity.Duedate < DateOnly.FromDateTime(DateTime.Today)) throw new InvalidOperationException("The due date has already passed, so payment cannot be made at this time.");
             if (invoiceEntity.Amount == 0) throw new Exception("Payment is already done");
-
+            if (amount > invoiceEntity.Amount) throw new Exception("Overpayment is not allowed");
+          
             invoiceEntity.Paid_amount += amount;
             invoiceEntity.Amount -= amount;
 
@@ -49,11 +56,7 @@ namespace InvoiceSystem.Services
             {
                 invoiceEntity.Status = InvoiceStatusEnum.Paid.ToString();
             }
-            else if(invoiceEntity.Paid_amount > invoiceEntity.Amount)
-            {
-                throw new Exception("Overpayment is not allowed");
-            }
-
+           
             await _invoiceRepository.UpdateInvoiceAsync(invoiceEntity);
         }
 
